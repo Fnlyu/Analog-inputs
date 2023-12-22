@@ -1,0 +1,64 @@
+from tkinter import Tk, Label, StringVar
+import pyautogui
+import keyboard
+from pynput.keyboard import Key, Controller
+import threading
+import re
+import time
+
+# 创建一个Tkinter窗口
+root = Tk()
+root.title("模拟键盘输入  @Fnlyu")
+root.geometry('700x300')  # 设置窗口大小
+
+def paste():
+    # 获取剪贴板的内容
+    text = root.clipboard_get()
+    # 找到中英文字符之间的位置
+    parts = re.split(r'([a-zA-Z][\u4e00-\u9fa5]|[a-zA-Z][\u4e00-\u9fa5])', text)
+    # 模拟键盘输入
+    keyboard = Controller()
+    for part in parts:
+        keyboard.type(part)
+        keyboard.press(Key.shift)
+        keyboard.release(Key.shift)
+        # 在每个字符之间添加0.01秒的延迟
+        time.sleep(0.01)
+
+# 创建一个StringVar，用于存储剪贴板的内容
+clipboard_content = StringVar()
+clipboard_content.set(root.clipboard_get())
+
+# 添加一个标签，显示剪贴板的内容
+Label(root, text="使用说明：首先将需要模拟输入的内容复制到剪贴板，").pack(anchor='n')
+Label(root, text="然后注意如果剪贴板内容开始为中文，输入法需调成中文模式，否则按shift调成英文").pack(anchor='n')
+Label(root, text="然后按下ctrl+`，即可将剪贴板内容模拟输入。\n").pack(anchor='n')
+Label(root, text="剪贴板内容：\n").pack(anchor='n')
+Label(root, textvariable=clipboard_content).pack(anchor='n')
+
+# 添加一个标签，显示作者信息
+Label(root, text="作者：@Fnlyu").place(relx=1.0, rely=1.0, anchor='se')
+# 定义一个函数，用于定期检查剪贴板的内容
+def check_clipboard():
+    # 获取当前剪贴板的内容
+    current_clipboard = root.clipboard_get()
+    # 如果剪贴板的内容与StringVar对象的值不同，则更新StringVar对象的值
+    if clipboard_content.get() != current_clipboard:
+        clipboard_content.set(current_clipboard)
+    # 每100毫秒检查一次剪贴板的内容
+    root.after(100, check_clipboard)
+
+# 设置全局快捷键，当按下'ctrl'+'`'时，调用paste函数
+def delayed_paste():
+    # 创建一个定时器，2秒后调用paste函数
+    timer = threading.Timer(0.5, paste)
+    # 启动定时器
+    timer.start()
+
+keyboard.add_hotkey('ctrl+`', delayed_paste)
+
+# 开始检查剪贴板的内容
+check_clipboard()
+
+# 开始Tkinter事件循环
+root.mainloop()
